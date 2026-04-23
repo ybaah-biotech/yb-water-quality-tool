@@ -1,52 +1,42 @@
-# yb-water-quality-tool
-Web-based tool for assessing pond water quality using a weighted scoring algorithm across 13 physicochemical parameters. Evaluates eutrophication risk based on peer-reviewed thresholds (US EPA, WHO, Boyd 2019). Built with HTML, CSS and JavaScript. Live at water-quality-tool.netlify.app
 # Water Quality Assessment Tool
 
-A science-backed, client-side web application for assessing pond water ecosystem 
-health — built to translate environmental monitoring knowledge into an accessible 
-analytical tool.
+An interactive browser-based tool to assess **freshwater pond health** and **eutrophication risk** using 13 physicochemical parameters and a peer-reviewed weighted scoring model.
 
-🔗 **Live tool:** [water-quality-tool.netlify.app](https://water-quality-tool.netlify.app)
+🌊 **Live tool → [ybaah-biotech.github.io/yb-water-quality-tool](https://ybaah-biotech.github.io/yb-water-quality-tool)**
 
 ---
 
-## What It Does
+## What it does
 
-Users input measurements for 13 physicochemical parameters and the tool returns:
+- Accepts 13 measured parameters (DO, phosphate, nitrate, chlorophyll A, ammonia, total nitrogen, pH, temperature, EC, TDS, salinity, ORP)
+- Classifies each parameter as Good / Moderate / Poor against peer-reviewed thresholds
+- Calculates a **Water Quality Score (WQS) from 0–100** using a weighted model
+- Outputs an independent **Eutrophication Risk rating** (Low / Moderate / High)
+- Displays results as an animated arc gauge + colour-coded parameter breakdown
 
-- A **Water Quality Score (0–100)** calculated using a weighted algorithm
-- A classification: Excellent / Good / Moderate / Poor
-- An independent **Eutrophication Risk Assessment** (Low / Moderate / High)
-- A per-parameter breakdown showing each score contribution
+## Scoring model
 
-## Parameters Assessed
-
-| Category | Parameters |
+| Classification | Score |
 |---|---|
-| Nutrients | Phosphate, Nitrate, Total Nitrogen, Ammonia |
-| Oxygen & Biology | Dissolved Oxygen, Chlorophyll A |
-| Physical | pH, Temperature, Conductivity, TDS, Salinity, ORP |
+| 80–100 | Excellent |
+| 60–80  | Good |
+| 40–60  | Moderate |
+| <40    | Poor |
 
-## Scientific Basis
+## Files
 
-Thresholds grounded in peer-reviewed standards:
-- Boyd (2019) — aquaculture and pond water quality
-- Carlson Trophic State Index (1977)
-- US EPA water quality criteria
-- WHO drinking water guidelines
+| File | Description |
+|---|---|
+| `index.html` | Self-contained web tool (HTML/CSS/JS, no dependencies) |
+| `water_quality_data.xlsx` | Parameter thresholds, scoring model & 3 example scenarios |
+| `linkedin_summary.pptx` | 6-slide project summary deck |
+| `linkedin_posts.txt` | Draft LinkedIn posts for project dissemination |
+| `notion_content.txt` | Ready-to-paste Notion content (Sections 3, 5, 6) |
 
-## Built With
+## Thresholds & sources
 
-- HTML5, CSS3, Vanilla JavaScript
-- Client-side only — no backend or data storage
-- Deployed via Netlify
-
-## Background
-
-Built independently following an MSc Biotechnology research project 
-(Nottingham Trent University) investigating eutrophication risk in pond 
-systems through a 12-week physicochemical monitoring programme.
+Boyd (2019) · Carlson TSI (1977) · Elser et al. (2022) · US EPA · WHO · MSc experimental data
 
 ---
 
-*Developed by Yaw Baah — [LinkedIn](https://linkedin.com/in/yaw-baah-92600b22a)*
+*MSc Environmental Monitoring Project · 2025*
