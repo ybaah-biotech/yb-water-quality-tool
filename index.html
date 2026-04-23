@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Quality Assessment Tool</title>
+<meta name="description" content="Assess freshwater pond health and eutrophication risk using 13 physicochemical parameters. Built on peer-reviewed thresholds and a weighted scoring model.">
+<meta property="og:title" content="Water Quality Assessment Tool">
+<meta property="og:description" content="Enter 13 physicochemical measurements to get a Water Quality Score (0–100) and Eutrophication Risk rating for any freshwater pond.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ybaah-biotech.github.io/yb-water-quality-tool">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Water Quality Assessment Tool">
+<meta name="twitter:description" content="Interactive freshwater pond health scorer — WQS + eutrophication risk from peer-reviewed thresholds.">
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────────────────── */
+:root {
+  --good:    #22c55e;
+  --mod:     #f59e0b;
+  --poor:    #ef4444;
+  --navy:    #0c4a6e;
+  --sky:     #0ea5e9;
+  --bg:      #f0f9ff;
+  --card:    #ffffff;
+  --text:    #1e293b;
+  --sub:     #64748b;
+  --border:  #e2e8f0;
+  --radius:  12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ── Top Banner ────────────────────────────────────────────────────────────── */
+.banner {
+  background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+  color: #fff;
+  text-align: center;
+  padding: 9px 20px;
+  font-size: 0.82rem;
+  letter-spacing: 0.1px;
+}
+.banner a {
+  color: #bae6fd;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(186,230,253,0.35);
+  transition: color .15s;
+}
+.banner a:hover { color: #fff; border-color: #fff; }
+.banner .sep { margin: 0 8px; opacity: 0.35; }
+
+/* ── Hero Header ───────────────────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(160deg, #0c4a6e 0%, #0369a1 60%, #0284c7 100%);
+  color: #fff;
+  padding: 40px 20px 36px;
+  text-align: center;
+}
+.hero h1 {
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  margin-bottom: 10px;
+}
+.hero p {
+  font-size: 0.97rem;
+  color: #bae6fd;
+  max-width: 560px;
+  margin: 0 auto 22px;
+  line-height: 1.6;
+}
+.hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.chip {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #e0f2fe;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+/* ── Main Layout ───────────────────────────────────────────────────────────── */
+.main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+}
+
+/* ── Section titles ────────────────────────────────────────────────────────── */
+.section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sub);
+  margin-bottom: 12px;
+}
+
+/* ── Presets ───────────────────────────────────────────────────────────────── */
+.presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.presets-row span {
+  font-size: 0.8rem;
+  color: var(--sub);
+  font-weight: 500;
+  margin-right: 2px;
+}
+.preset-btn {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  line-height: 1;
+}
+.preset-btn.healthy  { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.preset-btn.moderate { background: #fef9c3; color: #92400e; border-color: #fde68a; }
+.preset-btn.critical { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.preset-btn.reset-all{ background: #f1f5f9; color: var(--sub); border-color: var(--border); }
+.preset-btn:hover { filter: brightness(0.93); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.preset-btn:active { transform: translateY(0); }
+
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.progress-track {
+  flex: 1;
+  height: 5px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sky), #0284c7);
+  border-radius: 999px;
+  transition: width .3s ease;
+  width: 0%;
+}
+.progress-label {
+  font-size: 0.78rem;
+  color: var(--sub);
+  white-space: nowrap;
+  min-width: 68px;
+  text-align: right;
+}
+
+/* ── Input Grid ────────────────────────────────────────────────────────────── */
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.param-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 15px 11px;
+  transition: border-color .2s, box-shadow .2s;
+  position: relative;
+}
+.param-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+.param-card.state-good     { border-color: #86efac; }
+.param-card.state-moderate { border-color: #fde68a; }
+.param-card.state-poor     { border-color: #fca5a5; }
+.param-card.state-missing  { border-color: #fca5a5; background: #fff8f8; }
+
+.param-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 7px;
+}
+.param-left { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.param-name {
+  font-size: 0.81rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.param-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.param-unit {
+  font-size: 0.72rem;
+  color: var(--sub);
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.weight-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Tooltip */
+.tip-wrap { position: relative; display: inline-flex; cursor: default; }
+.tip-icon {
+  width: 15px; height: 15px;
+  background: var(--border);
+  color: var(--sub);
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+.tip-text {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 0.73rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border-radius: 8px;
+  width: 200px;
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+.tip-text::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1e293b;
+}
+.tip-wrap:hover .tip-text { display: block; }
+
+/* Input */
+.param-input-wrap { position: relative; }
+.param-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.91rem;
+  color: var(--text);
+  background: #f8fafc;
+  outline: none;
+  transition: border-color .15s, background .15s;
+  -moz-appearance: textfield;
+}
+.param-input::-webkit-outer-spin-button,
+.param-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.param-input:focus { border-color: var(--sky); background: #fff; box-shadow: 0 0 0 3px rgba(14,165,233,.1); }
+
+.threshold-hint {
+  font-size: 0.68rem;
+  color: var(--sub);
+  margin-top: 5px;
+  line-height: 1.3;
+}
+.threshold-hint .g { color: #15803d; font-weight: 600; }
+.threshold-hint .m { color: #92400e; font-weight: 600; }
+.threshold-hint .p { color: #991b1b; font-weight: 600; }
+
+/* ── Validation message ─────────────────────────────────────────────────────── */
+.validation-msg {
+  display: none;
+  background: #fff8f8;
+  border: 1.5px solid #fca5a5;
+  color: #991b1b;
+  font-size: 0.84rem;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.validation-msg.show { display: block; }
+
+/* ── Assess Button ──────────────────────────────────────────────────────────── */
+.btn-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.assess-btn {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  letter-spacing: 0.4px;
+  box-shadow: 0 4px 14px rgba(14,165,233,.32);
+  transition: all .2s;
+}
+.assess-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(14,165,233,.42); }
+.assess-btn:active { transform: translateY(0); }
+
+/* ── Results ────────────────────────────────────────────────────────────────── */
+#results {
+  display: none;
+  animation: fadeUp .4s ease;
+}
+#results.visible { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.results-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.results-divider::before,
+.results-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.results-divider span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sub);
+  white-space: nowrap;
+}
+
+.results-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 560px) {
+  .results-top { grid-template-columns: 1fr; }
+}
+
+/* Gauge card */
+.gauge-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.card-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--sub);
+}
+.gauge-svg { width: 170px; height: 170px; overflow: visible; }
+
+/* Gauge math: r=72, C=452.4, 240° arc=301.6 */
+.gauge-track {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 13;
+  stroke-linecap: round;
+  /* 240° visible (301.6) + 150.8 gap = full circle */
+  stroke-dasharray: 301.6 150.8;
+}
+.gauge-arc {
+  fill: none;
+  stroke-width: 13;
+  stroke-linecap: round;
+  stroke-dasharray: 0 452.4;
+  transition: stroke-dasharray 1.1s cubic-bezier(.4,0,.2,1), stroke .5s ease;
+}
+.gauge-score-text {
+  font-size: 2.5rem;
+  font-weight: 800;
+  fill: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.gauge-class-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  fill: var(--sub);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Risk card */
+.risk-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+}
+.risk-badge {
+  font-size: 1.45rem;
+  font-weight: 800;
+  padding: 10px 24px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+}
+.risk-badge.low      { background: #dcfce7; color: #15803d; }
+.risk-badge.moderate { background: #fef9c3; color: #92400e; }
+.risk-badge.high     { background: #fee2e2; color: #991b1b; }
+
+.risk-desc {
+  font-size: 0.85rem;
+  color: var(--sub);
+  line-height: 1.65;
+  max-width: 270px;
+}
+
+/* Key drivers */
+.drivers-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.driver-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.driver-chip.good     { background: #dcfce7; color: #15803d; }
+.driver-chip.moderate { background: #fef9c3; color: #92400e; }
+.driver-chip.poor     { background: #fee2e2; color: #991b1b; }
+
+/* Breakdown card */
+.breakdown-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 22px 18px;
+  margin-bottom: 20px;
+}
+.breakdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.param-bars { display: flex; flex-direction: column; gap: 10px; }
+
+.param-row {
+  display: grid;
+  grid-template-columns: 175px 1fr 90px 82px;
+  align-items: center;
+  gap: 10px;
+}
+@media (max-width: 600px) {
+  .param-row {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    row-gap: 4px;
+  }
+  .bar-wrap { grid-column: 1 / -1; }
+  .param-row-val { order: 2; }
+}
+
+.param-row-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.bar-wrap { height: 9px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  width: 0%;
+  transition: width 0.9s cubic-bezier(.4,0,.2,1);
+}
+.bar-fill.good     { background: var(--good); }
+.bar-fill.moderate { background: var(--mod); }
+.bar-fill.poor     { background: var(--poor); }
+
+.param-row-val { font-size: 0.79rem; color: var(--sub); text-align: right; }
+.param-row-badge {
+  font-size: 0.71rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-align: center;
+}
+.param-row-badge.good     { background: #dcfce7; color: #15803d; }
+.param-row-badge.moderate { background: #fef9c3; color: #92400e; }
+.param-row-badge.poor     { background: #fee2e2; color: #991b1b; }
+
+/* Re-assess actions */
+.results-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.btn-secondary {
+  padding: 10px 22px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .18s;
+}
+.btn-secondary:hover { background: var(--bg); border-color: #94a3b8; }
+.btn-secondary.danger { color: #991b1b; border-color: #fca5a5; }
+.btn-secondary.danger:hover { background: #fff8f8; }
+
+/* ── About / Methodology ────────────────────────────────────────────────────── */
+.about-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.about-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.about-toggle .chevron {
+  font-size: 0.7rem;
+  color: var(--sub);
+  transition: transform .2s;
+}
+.about-toggle[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+.about-body {
+  display: none;
+  padding: 0 20px 18px;
+  font-size: 0.83rem;
+  color: var(--sub);
+  line-height: 1.7;
+  border-top: 1px solid var(--border);
+}
+.about-body.open { display: block; }
+.about-body p + p { margin-top: 8px; }
+.about-body strong { color: var(--text); }
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+footer {
+  text-align: center;
+  color: var(--sub);
+  font-size: 0.77rem;
+  line-height: 1.7;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+footer a { color: var(--sky); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- Banner -->
+<div class="banner">
+  🌊 Water Quality Assessment Tool
+  <span class="sep">|</span>
+  Live at: <a href="https://ybaah-biotech.github.io/yb-water-quality-tool" target="_blank" rel="noopener">water-quality-tool.netlify.app</a>
+  <span class="sep">|</span>
+  MSc Environmental Monitoring Project &nbsp;·&nbsp; 2025
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>Water Quality Assessment Tool</h1>
+  <p>Enter your pond's physicochemical measurements to calculate a weighted Water Quality Score and Eutrophication Risk rating — grounded in peer-reviewed science.</p>
+  <div class="hero-chips">
+    <span class="chip">13 Parameters</span>
+    <span class="chip">Weighted Scoring Model</span>
+    <span class="chip">Eutrophication Risk Engine</span>
+    <span class="chip">Peer-Reviewed Thresholds</span>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- About / Methodology -->
+  <div class="about-card" style="margin-bottom:24px;">
+    <button class="about-toggle" onclick="toggleAbout(this)" aria-expanded="false">
+      How does the scoring work?
+      <span class="chevron">▼</span>
+    </button>
+    <div class="about-body" id="aboutBody">
+      <p><strong>Water Quality Score (WQS):</strong> Each parameter is classified as <span style="color:#15803d;font-weight:600">Good</span>, <span style="color:#92400e;font-weight:600">Moderate</span>, or <span style="color:#991b1b;font-weight:600">Poor</span> against peer-reviewed thresholds. Scores of 100, 60, or 20 are assigned and multiplied by parameter weights, then summed to give a final score from 0–100.</p>
+      <p><strong>Eutrophication Risk</strong> is assessed independently using rule-based logic on Phosphate, Dissolved Oxygen, and Nitrate — the three parameters most predictive of eutrophication events.</p>
+      <p><strong>Classifications:</strong> 80–100 = Excellent · 60–80 = Good · 40–60 = Moderate · &lt;40 = Poor</p>
+      <p style="margin-top:10px;font-size:0.78rem;">Thresholds sourced from Boyd (2019), Carlson TSI (1977), Elser et al. (2022), US EPA, WHO, and MSc experimental data. For educational and indicative use.</p>
+    </div>
+  </div>
+
+  <!-- Preset scenarios -->
+  <div class="presets-row">
+    <span>Load scenario:</span>
+    <button class="preset-btn healthy"  onclick="loadPreset('healthy')">🌿 Healthy Pond</button>
+    <button class="preset-btn moderate" onclick="loadPreset('moderate')">⚠️ Moderate Stress</button>
+    <button class="preset-btn critical" onclick="loadPreset('critical')">🚨 Eutrophic Pond</button>
+    <button class="preset-btn reset-all" onclick="clearAll()">✕ Clear all</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 12</div>
+  </div>
+
+  <!-- Validation message -->
+  <div class="validation-msg" id="validationMsg"></div>
+
+  <!-- Input grid -->
+  <div class="input-grid" id="inputGrid"></div>
+
+  <!-- Assess button -->
+  <div class="btn-row">
+    <button class="assess-btn" onclick="assess()">Assess Water Quality →</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="results-divider"><span>Assessment Results</span></div>
+
+    <div class="results-top">
+      <!-- WQS Gauge -->
+      <div class="gauge-card">
+        <div class="card-label">Water Quality Score</div>
+        <!-- viewBox 180×180, r=72, C=452.4, 240°=301.6 -->
+        <!-- Gauge starts at 7 o'clock (210° past 12, i.e. -210° rotation) -->
+        <svg class="gauge-svg" viewBox="0 0 180 180" role="img" aria-label="Water quality score gauge">
+          <g transform="rotate(-210 90 90)">
+            <!-- Track: 240° arc -->
+            <circle class="gauge-track" cx="90" cy="90" r="72"/>
+            <!-- Fill arc, animated via JS -->
+            <circle class="gauge-arc" id="gaugeArc" cx="90" cy="90" r="72" stroke="#22c55e"/>
+          </g>
+          <text id="gaugeScore" class="gauge-score-text" x="90" y="92" text-anchor="middle" dominant-baseline="middle">—</text>
+          <text id="gaugeClass" class="gauge-class-text" x="90" y="116" text-anchor="middle">—</text>
+        </svg>
+      </div>
+
+      <!-- Eutrophication Risk -->
+      <div class="risk-card">
+        <div class="card-label">Eutrophication Risk</div>
+        <div id="riskBadge" class="risk-badge">—</div>
+        <p id="riskDesc" class="risk-desc"></p>
+        <div class="drivers-row" id="driverChips"></div>
+      </div>
+    </div>
+
+    <!-- Parameter Breakdown -->
+    <div class="breakdown-card">
+      <div class="breakdown-header">
+        <div class="card-label" style="margin-bottom:0">Parameter Breakdown</div>
+        <div style="font-size:0.75rem;color:var(--sub);">bar width reflects score (Good=100, Mod=60, Poor=20)</div>
+      </div>
+      <div class="param-bars" id="paramBars"></div>
+    </div>
+
+    <!-- Re-assess actions -->
+    <div class="results-actions">
+      <button class="btn-secondary" onclick="scrollToInputs()">← Edit Parameters</button>
+      <button class="btn-secondary" onclick="reassess()">↺ Re-assess</button>
+      <button class="btn-secondary danger" onclick="clearAll()">✕ Clear & Start Over</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    Parameter thresholds: Boyd (2019) · Carlson TSI (1977) · Elser et al. (2022) · US EPA · WHO · MSc experimental data<br>
+    For educational and indicative purposes. Not a substitute for professional environmental assessment.
+  </footer>
+</main>
+
+<script>
+/* ── Parameter definitions ─────────────────────────────────────────────────── */
+const PARAMS = [
+  {
+    id:'do_mgl', label:'Dissolved Oxygen', unit:'mg/L', weight:0.20,
+    min:0, max:20, step:0.1,
+    tip:'Actual oxygen concentration available to aquatic life. Low DO is the leading cause of fish kills and a direct sign of eutrophication impact.',
+    classify(v){ return v>7?'good':v>=5?'moderate':'poor'; },
+    hint:'<span class="g">Good &gt;7</span> · <span class="m">Mod 5–7</span> · <span class="p">Poor &lt;5</span>'
+  },
+  {
+    id:'phosphate', label:'Phosphate (PO₄³⁻)', unit:'mg/L', weight:0.20,
+    min:0, max:2, step:0.001,
+    tip:'The most biologically available phosphorus form. Even tiny increases can rapidly trigger algal blooms — the primary eutrophication driver.',
+    classify(v){ return v<0.03?'good':v<=0.1?'moderate':'poor'; },
+    hint:'<span class="g">Good &lt;0.03</span> · <span class="m">Mod 0.03–0.1</span> · <span class="p">Poor &gt;0.1</span>'
+  },
+  {
+    id:'nitrate', label:'Nitrate (NO₃⁻)', unit:'mg/L', weight:0.15,
+    min:0, max:100, step:0.1,
+    tip:'Dissolved inorganic nitrogen, often from fertiliser runoff or nitrification. Elevated nitrate fuels algal growth alongside phosphorus.',
+    classify(v){ return v<10?'good':v<=20?'moderate':'poor'; },
+    hint:'<span class="g">Good &lt;10</span> · <span class="m">Mod 10–20</span> · <span class="p">Poor &gt;20</span>'
+  },
+  {
+    id:'chla', label:'Chlorophyll A', unit:'µg/L', weight:0.15,
+    min:0, max:200, step:0.1,
+    tip:'A proxy for algal biomass (Carlson TSI). Elevated chlorophyll signals active algal blooms, reduced water clarity, and oxygen stress risk.',
+    classify(v){ return v<=6?'good':v<=40?'moderate':'poor'; },
+    hint:'<span class="g">Good 2–6</span> · <span class="m">Mod 6–40</span> · <span class="p">Poor &gt;40</span>'
+  },
+  {
+    id:'ammonia', label:'Ammonia (NH₃)', unit:'mg/L', weight:0.10,
+    min:0, max:10, step:0.01,
+    tip:'From organic waste and decomposition. Un-ionised ammonia (NH₃) is directly toxic to fish; toxicity increases at higher pH and temperature.',
+    classify(v){ return v<0.5?'good':v<=1?'moderate':'poor'; },
+    hint:'<span class="g">Good &lt;0.5</span> · <span class="m">Mod 0.5–1</span> · <span class="p">Poor &gt;1</span>'
+  },
+  {
+    id:'tn', label:'Total Nitrogen', unit:'mg/L', weight:0.10,
+    min:0, max:20, step:0.1,
+    tip:'Sum of all nitrogen forms (dissolved and particulate). Captures overall nutrient pressure and supports bloom risk assessment.',
+    classify(v){ return v<0.5?'good':v<=1.5?'moderate':'poor'; },
+    hint:'<span class="g">Good &lt;0.5</span> · <span class="m">Mod 0.5–1.5</span> · <span class="p">Poor &gt;1.5</span>'
+  },
+  {
+    id:'ph', label:'pH', unit:'—', weight:0.05,
+    min:0, max:14, step:0.1,
+    tip:'Measures water acidity/alkalinity. Affects fish and invertebrate stress, nutrient availability, and the toxicity of ammonia compounds.',
+    classify(v){ return (v>=6.5&&v<=9)?'good':((v>=5&&v<6.5)||(v>9&&v<=10))?'moderate':'poor'; },
+    hint:'<span class="g">Good 6.5–9</span> · <span class="m">Mod 5–6.5 / 9–10</span> · <span class="p">Poor &lt;5 or &gt;10</span>'
+  },
+  {
+    id:'temp', label:'Temperature', unit:'°C', weight:0.025,
+    min:-5, max:50, step:0.1,
+    tip:'Warm water holds less dissolved oxygen and accelerates algal growth. Temperatures above 25°C amplify eutrophication symptoms.',
+    classify(v){ return (v>=15&&v<=25)?'good':(v>25&&v<=30)?'moderate':'poor'; },
+    hint:'<span class="g">Good 15–25</span> · <span class="m">Mod 25–30</span> · <span class="p">Poor &gt;30 or &lt;10</span>'
+  },
+  {
+    id:'ec', label:'Conductivity (EC)', unit:'µS/cm', weight:0.025,
+    min:0, max:5000, step:1,
+    tip:'Reflects dissolved ions (salts, nutrients, metals). Higher EC can signal runoff pollution inputs or increasing mineralization.',
+    classify(v){ return v<200?'good':v<=500?'moderate':'poor'; },
+    hint:'<span class="g">Good &lt;200</span> · <span class="m">Mod 200–500</span> · <span class="p">Poor &gt;500</span>'
+  },
+  {
+    id:'tds', label:'Total Dissolved Solids', unit:'mg/L', weight:0.025,
+    min:0, max:5000, step:1,
+    tip:'Estimates total concentration of dissolved substances. High TDS can stress freshwater organisms and track watershed pollution inputs.',
+    classify(v){ return v<300?'good':v<=600?'moderate':'poor'; },
+    hint:'<span class="g">Good &lt;300</span> · <span class="m">Mod 300–600</span> · <span class="p">Poor &gt;600</span>'
+  },
+  {
+    id:'psu', label:'Salinity (PSU)', unit:'ppt', weight:0.025,
+    min:0, max:10, step:0.01,
+    tip:'Salt content estimate. Rising salinity (from road salt, intrusion, or evaporation) can reduce freshwater biodiversity significantly.',
+    classify(v){ return v<0.5?'good':v<=1?'moderate':'poor'; },
+    hint:'<span class="g">Good &lt;0.5</span> · <span class="m">Mod 0.5–1</span> · <span class="p">Poor &gt;1</span>'
+  },
+  {
+    id:'orp', label:'ORP', unit:'mV', weight:0.025,
+    min:-500, max:800, step:1,
+    tip:'Oxidation-reduction potential. Low or negative ORP indicates oxygen-depleted conditions that release phosphorus from sediments, sustaining eutrophication.',
+    classify(v){ return (v>=100&&v<=300)?'good':(v>=0&&v<100)?'moderate':'poor'; },
+    hint:'<span class="g">Good 100–300</span> · <span class="m">Mod 0–100</span> · <span class="p">Poor &lt;0</span>'
+  }
+];
+
+const SCORES  = { good:100, moderate:60, poor:20 };
+const LABELS  = { good:'Good', moderate:'Moderate', poor:'Poor' };
+const PRESETS = {
+  healthy:  { do_mgl:9.2, phosphate:0.01, nitrate:4,  chla:3,  ammonia:0.1, tn:0.3, ph:7.4, temp:18, ec:120, tds:180, psu:0.1, orp:220  },
+  moderate: { do_mgl:6.1, phosphate:0.06, nitrate:14, chla:18, ammonia:0.6, tn:0.9, ph:8.5, temp:27, ec:320, tds:420, psu:0.6, orp:60   },
+  critical: { do_mgl:3.2, phosphate:0.18, nitrate:28, chla:55, ammonia:1.4, tn:2.2, ph:9.8, temp:31, ec:620, tds:720, psu:1.4, orp:-30  }
+};
+
+/* ── Build inputs ──────────────────────────────────────────────────────────── */
+function buildInputs() {
+  const grid = document.getElementById('inputGrid');
+  grid.innerHTML = '';
+  PARAMS.forEach(p => {
+    const pct = Math.round(p.weight * 100);
+    const card = document.createElement('div');
+    card.className = 'param-card';
+    card.id = 'card_' + p.id;
+    card.innerHTML = `
+      <div class="param-top">
+        <div class="param-left">
+          <span class="param-name">${p.label}</span>
+          <div class="tip-wrap">
+            <span class="tip-icon" aria-label="Info">?</span>
+            <span class="tip-text">${p.tip}</span>
+          </div>
+        </div>
+        <div class="param-right">
+          <span class="weight-badge">${pct}%</span>
+          <span class="param-unit">${p.unit}</span>
+        </div>
+      </div>
+      <label for="inp_${p.id}" class="sr-only">${p.label} in ${p.unit}</label>
+      <input
+        class="param-input"
+        type="number"
+        id="inp_${p.id}"
+        placeholder="Enter value"
+        step="${p.step}"
+        ${p.min !== undefined && p.id !== 'orp' && p.id !== 'temp' ? `min="${p.min}"` : ''}
+        autocomplete="off"
+        oninput="onParamInput('${p.id}')"
+      >
+      <div class="threshold-hint">${p.hint}</div>`;
+    grid.appendChild(card);
+  });
+  updateProgress();
+}
+
+/* ── Live feedback ─────────────────────────────────────────────────────────── */
+function onParamInput(id) {
+  const p    = PARAMS.find(x => x.id === id);
+  const el   = document.getElementById('inp_' + id);
+  const card = document.getElementById('card_' + id);
+  const val  = parseFloat(el.value);
+
+  card.classList.remove('state-good','state-moderate','state-poor','state-missing');
+  if (!isNaN(val)) {
+    card.classList.add('state-' + p.classify(val));
+  }
+  updateProgress();
+  // hide validation if user is fixing things
+  const filled = PARAMS.filter(p => !isNaN(parseFloat(document.getElementById('inp_'+p.id).value))).length;
+  if (filled === PARAMS.length) hideValidation();
+}
+
+function updateProgress() {
+  const total  = PARAMS.length;
+  const filled = PARAMS.filter(p => !isNaN(parseFloat(document.getElementById('inp_'+p.id).value))).length;
+  document.getElementById('progressFill').style.width = (filled / total * 100) + '%';
+  document.getElementById('progressLabel').textContent = filled + ' / ' + total;
+}
+
+/* ── Presets / Clear ───────────────────────────────────────────────────────── */
+function loadPreset(name) {
+  const vals = PRESETS[name];
+  PARAMS.forEach(p => {
+    const el = document.getElementById('inp_' + p.id);
+    el.value = vals[p.id] !== undefined ? vals[p.id] : '';
+    onParamInput(p.id);
+  });
+  hideValidation();
+}
+
+function clearAll() {
+  PARAMS.forEach(p => {
+    const el = document.getElementById('inp_' + p.id);
+    el.value = '';
+    document.getElementById('card_' + p.id).className = 'param-card';
+  });
+  updateProgress();
+  hideValidation();
+  const results = document.getElementById('results');
+  results.classList.remove('visible');
+  results.style.display = 'none';
+  scrollToInputs();
+}
+
+function scrollToInputs() {
+  document.getElementById('inputGrid').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ── Validation ────────────────────────────────────────────────────────────── */
+function showValidation(msg) {
+  const el = document.getElementById('validationMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideValidation() {
+  document.getElementById('validationMsg').classList.remove('show');
+}
+
+/* ── Toggle about ──────────────────────────────────────────────────────────── */
+function toggleAbout(btn) {
+  const body    = document.getElementById('aboutBody');
+  const isOpen  = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', String(!isOpen));
+  body.classList.toggle('open', !isOpen);
+}
+
+/* ── Assess ────────────────────────────────────────────────────────────────── */
+function assess() {
+  hideValidation();
+
+  const classes = {};
+  const values  = {};
+  const missing = [];
+  let wqs = 0;
+
+  PARAMS.forEach(p => {
+    const val = parseFloat(document.getElementById('inp_' + p.id).value);
+    if (isNaN(val)) {
+      missing.push(p.label);
+      document.getElementById('card_' + p.id).classList.add('state-missing');
+    } else {
+      values[p.id]  = val;
+      classes[p.id] = p.classify(val);
+      wqs += SCORES[classes[p.id]] * p.weight;
+    }
+  });
+
+  if (missing.length) {
+    showValidation(`Please enter values for all ${PARAMS.length} parameters before assessing. Missing: ${missing.slice(0,4).join(', ')}${missing.length>4?' and '+(missing.length-4)+' more':''}.`);
+    document.getElementById('validationMsg').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    return;
+  }
+
+  wqs = Math.round(wqs);
+
+  // WQS classification
+  let wqsLabel, wqsColor;
+  if      (wqs >= 80) { wqsLabel = 'Excellent'; wqsColor = '#16a34a'; }
+  else if (wqs >= 60) { wqsLabel = 'Good';      wqsColor = '#65a30d'; }
+  else if (wqs >= 40) { wqsLabel = 'Moderate';  wqsColor = '#f59e0b'; }
+  else                { wqsLabel = 'Poor';       wqsColor = '#ef4444'; }
+
+  // Eutrophication risk
+  const po4 = classes.phosphate, doC = classes.do_mgl, no3 = classes.nitrate;
+  let risk, riskDesc;
+  if (po4 === 'poor' && (doC === 'moderate' || doC === 'poor')) {
+    risk     = 'High';
+    riskDesc = 'Critical conditions — excess phosphate combined with low dissolved oxygen strongly indicate active eutrophication. Immediate management action is recommended.';
+  } else if (po4 === 'poor' || po4 === 'moderate' || no3 === 'poor' || no3 === 'moderate') {
+    risk     = 'Moderate';
+    riskDesc = 'Elevated nutrient levels suggest a growing eutrophication risk. Monitor conditions regularly and consider reducing nutrient inputs from surrounding land.';
+  } else {
+    risk     = 'Low';
+    riskDesc = 'Nutrient levels and dissolved oxygen are within healthy ranges. The pond shows low eutrophication risk — maintain current land management practices.';
+  }
+
+  // ── Show results ──
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+  // Trigger animation restart
+  void results.offsetWidth;
+  results.classList.add('visible');
+  results.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  // ── Gauge ──
+  const arc     = document.getElementById('gaugeArc');
+  const scoreEl = document.getElementById('gaugeScore');
+  const classEl = document.getElementById('gaugeClass');
+  // C = 2π×72 = 452.4, 240° arc = 301.6
+  const arcLen = 301.6, circ = 452.4;
+  const dashLen = (wqs / 100) * arcLen;
+
+  scoreEl.textContent = '—';
+  classEl.textContent = '';
+  arc.style.stroke = wqsColor;
+
+  // Defer so CSS transition fires
+  requestAnimationFrame(() => {
+    arc.style.strokeDasharray = `${dashLen} ${circ - dashLen}`;
+  });
+
+  // Number counter
+  let cur = 0;
+  const step = wqs / 55;
+  const timer = setInterval(() => {
+    cur = Math.min(cur + step, wqs);
+    scoreEl.textContent = Math.round(cur);
+    if (cur >= wqs) { clearInterval(timer); classEl.textContent = wqsLabel; }
+  }, 16);
+
+  // ── Risk badge ──
+  document.getElementById('riskBadge').className = 'risk-badge ' + risk.toLowerCase();
+  document.getElementById('riskBadge').textContent = risk + ' Risk';
+  document.getElementById('riskDesc').textContent = riskDesc;
+
+  // Driver chips (top weighted poor/moderate params)
+  const chips = PARAMS
+    .filter(p => classes[p.id] !== 'good')
+    .sort((a,b) => b.weight - a.weight)
+    .slice(0, 4);
+  const chipsEl = document.getElementById('driverChips');
+  chipsEl.innerHTML = chips.length
+    ? chips.map(p => `<span class="driver-chip ${classes[p.id]}">${p.label}: ${LABELS[classes[p.id]]}</span>`).join('')
+    : '<span class="driver-chip good">All parameters within range</span>';
+
+  // ── Parameter bars ──
+  const barsEl = document.getElementById('paramBars');
+  barsEl.innerHTML = '';
+  PARAMS.forEach(p => {
+    const cls  = classes[p.id];
+    const val  = values[p.id];
+    const barW = cls === 'good' ? 100 : cls === 'moderate' ? 60 : 20;
+    const row  = document.createElement('div');
+    row.className = 'param-row';
+    row.innerHTML = `
+      <span class="param-row-name">${p.label}</span>
+      <div class="bar-wrap"><div class="bar-fill ${cls}" id="bar_${p.id}" style="width:0%"></div></div>
+      <span class="param-row-val">${val}${p.unit !== '—' ? ' ' + p.unit : ''}</span>
+      <span class="param-row-badge ${cls}">${LABELS[cls]}</span>`;
+    barsEl.appendChild(row);
+  });
+
+  // Staggered bar animation
+  requestAnimationFrame(() => {
+    PARAMS.forEach((p, i) => {
+      const cls  = classes[p.id];
+      const barW = cls === 'good' ? 100 : cls === 'moderate' ? 60 : 20;
+      setTimeout(() => {
+        const el = document.getElementById('bar_' + p.id);
+        if (el) el.style.width = barW + '%';
+      }, 60 + i * 45);
+    });
+  });
+}
+
+function reassess() {
+  // Hide results and re-run with same values
+  const results = document.getElementById('results');
+  results.classList.remove('visible');
+  results.style.display = 'none';
+  setTimeout(assess, 80);
+}
+
+/* ── SR-only utility ────────────────────────────────────────────────────────── */
+const style = document.createElement('style');
+style.textContent = '.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}';
+document.head.appendChild(style);
+
+/* ── Init ───────────────────────────────────────────────────────────────────── */
+buildInputs();
+</script>
+</body>
+</html>
